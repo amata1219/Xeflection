@@ -4,9 +4,9 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 class AnyReflected(val clazz: Class[_], val instance: Any) {
 
-  def getAs[T]: T = instance.asInstanceOf[T]
+  def as[T]: T = instance.asInstanceOf[T]
 
-  def get[T](name: String): T = field(name).getAs
+  def get[T](name: String): T = accessibleField(name).get(instance).asInstanceOf[T]
 
   def set(name: String, value: Any): AnyReflected = {
     accessibleField(name).set(instance, value)
