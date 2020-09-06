@@ -4,15 +4,9 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 class AnyReflected(val clazz: Class[_], val instance: Any) {
 
-  object AnyReflected {
+  def getAs[T]: T = instance.asInstanceOf[T]
 
-    val NONE: AnyReflected = Reflect.on(().getClass, ())
-
-  }
-
-  def get[T](): T = instance.asInstanceOf[T]
-
-  def get[T](name: String): T = field(name).get()
+  def get[T](name: String): T = field(name).getAs
 
   def set(name: String, value: Any): AnyReflected = {
     accessibleField(name).set(instance, value)
@@ -32,7 +26,7 @@ class AnyReflected(val clazz: Class[_], val instance: Any) {
 
   def call(name: String, args: Any*): AnyReflected = {
     val types: Array[Class[_]] = args.map(_.getClass).toArray
-    accessibleMethod(name, types:_*).invoke(instance, args) match {
+    accessibleMethod(name, types:_*).invoke(instance, args:_*) match {
       case null => AnyReflected.NONE
       case result => Reflect.on(result.getClass, result)
     }
@@ -46,7 +40,7 @@ class AnyReflected(val clazz: Class[_], val instance: Any) {
 
   def create(args: Any*): AnyReflected = {
     val types: Array[Class[_]] = args.map(_.getClass).toArray
-    val result = accessibleConstructor(types:_*).newInstance(args)
+    val result = accessibleConstructor(types:_*).newInstance(args:_*)
     Reflect.on(clazz, result)
   }
 
@@ -56,5 +50,10 @@ class AnyReflected(val clazz: Class[_], val instance: Any) {
     constructor
   }
 
+  private object AnyReflected {
+
+    val NONE: AnyReflected = Reflect.on(classOf[Unit], ())
+
+  }
 
 }
