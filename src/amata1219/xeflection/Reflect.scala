@@ -8,4 +8,8 @@ object Reflect {
 
   def on(clazz: Class[_], instance: Any): AnyReflected = new AnyReflected(clazz, instance)
 
+  def onNetMinecraftServer(simpleClazzName: String, instance: Any): AnyReflected = on(s"${NetMinecraftServer.path}.$simpleClazzName", instance)
+
+  def onOrgBukkitCraftbukkit(simpleClazzName: String, instance: Any): AnyReflected = on(s"${OrgBukkitCraftbukkit.path}.$simpleClazzName", instance)
+
 }
