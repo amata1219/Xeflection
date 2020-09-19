@@ -18,13 +18,14 @@ class AnyReflected(val clazz: Class[_], val instance: Any) {
   }
 
   def set(name: String, value: Any => Any): AnyReflected = {
-    set(name, value(as[Any]))
+    set(name, value(get[Any](name)))
     this
   }
 
   def field(name: String): AnyReflected = {
     val field: Field = accessibleField(name)
-    Reflect.on(field.getClass, field.get(instance))
+    val value: Any = field.get(instance)
+    Reflect.on(value.getClass, value)
   }
 
   private def accessibleField(name: String): Field = {
