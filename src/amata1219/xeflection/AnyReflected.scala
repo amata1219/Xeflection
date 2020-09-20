@@ -1,6 +1,6 @@
 package amata1219.xeflection
 
-import java.lang.reflect.{Constructor, Field, Method}
+import java.lang.reflect.{AccessibleObject, Constructor, Field, Method}
 
 class AnyReflected(val clazz: Class[_], val instance: Any) {
 
@@ -24,15 +24,10 @@ class AnyReflected(val clazz: Class[_], val instance: Any) {
 
   def field(name: String): AnyReflected = {
     val field: Field = accessibleField(name)
-    val value: Any = field.get(instance)
-    Reflect.on(field.getClass, value)
+    Reflect.on(field.getType, field.get(instance))
   }
 
-  private def accessibleField(name: String): Field = {
-    val field: Field = clazz.getDeclaredField(name)
-    field.setAccessible(true)
-    field
-  }
+  private def accessibleField(name: String): Field = searchUpward4Member[NoSuchFieldException, Field](_.getDeclaredField(name))
 
   def call(name: String, args: Any*): AnyReflected = {
     val types: Array[Class[_]] = args.map(_.getClass).toArray
@@ -42,10 +37,28 @@ class AnyReflected(val clazz: Class[_], val instance: Any) {
     }
   }
 
-  private def accessibleMethod(name: String, types: Class[_]*): Method = {
-    val method: Method = clazz.getDeclaredMethod(name, types:_*)
-    method.setAccessible(true)
-    method
+  private def accessibleMethod(name: String, types: Class[_]*): Method = searchUpward4Member[NoSuchMethodException, Method](_.getDeclaredMethod(name, types:_*))
+
+  private def searchUpward4Member[E <: Exception, M <: AccessibleObject](getter: Class[_] => M)(implicit nullable: Null <:< M): M = {
+    var current: Class[_] = clazz
+    var result: M = null
+    try {
+      result = getter(current)
+    } catch {
+      case ex: E =>
+        do {
+          try {
+            result = getter(current)
+          } catch {
+            case _: E =>
+          }
+          current = current.getSuperclass
+        } while (current != null)
+
+        throw ex
+    }
+    result.setAccessible(true)
+    result
   }
 
   def create(args: Any*): AnyReflected = {
