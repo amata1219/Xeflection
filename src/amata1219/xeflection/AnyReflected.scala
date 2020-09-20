@@ -39,7 +39,7 @@ class AnyReflected(val clazz: Class[_], val instance: Any) {
 
   private def accessibleMethod(name: String, types: Class[_]*): Method = searchUpward4Member[NoSuchMethodException, Method](_.getDeclaredMethod(name, types:_*))
 
-  private def searchUpward4Member[E <: Exception, M <: AccessibleObject](getter: Class[_] => M)(implicit nullable: Null <:< M): M = {
+  private def searchUpward4Member[E <: Exception, M >: Null <: AccessibleObject](getter: Class[_] => M): M = {
     var current: Class[_] = clazz
     var result: M = null
     try {
