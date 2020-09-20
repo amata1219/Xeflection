@@ -25,7 +25,7 @@ class AnyReflected(val clazz: Class[_], val instance: Any) {
   def field(name: String): AnyReflected = {
     val field: Field = accessibleField(name)
     val value: Any = field.get(instance)
-    Reflect.on(value.getClass, value)
+    Reflect.on(field.getClass, value)
   }
 
   private def accessibleField(name: String): Field = {
