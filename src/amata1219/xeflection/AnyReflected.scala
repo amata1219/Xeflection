@@ -64,7 +64,7 @@ class AnyReflected(val clazz: Class[_], val instance: Any) {
   def create(args: Any*): AnyReflected = {
     val types: Array[Class[_]] = args.map(_.getClass).toArray
     val result = accessibleConstructor(types:_*).newInstance(args:_*)
-    Reflect.on(clazz, result)
+    Reflect.on(result.getClass, result)
   }
 
   private def accessibleConstructor(types: Class[_]*): Constructor[_] = {
