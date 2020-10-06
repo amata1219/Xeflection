@@ -12,14 +12,14 @@ class AnyReflected(val clazz: Class<*>, private val instance: Any?) {
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <T> value(): T? = when (instance) {
+    fun <T> cast2(): T? = when (instance) {
         null -> null
         else -> instance as T
     }
 
-    fun <T> value(name: String): T? = field(name).value()
+    fun <T> value(name: String): T? = field(name).cast2<T>()
 
-    fun flatMap(mapper: (Any?) -> AnyReflected): AnyReflected = mapper(value())
+    fun flatMap(mapper: (Any?) -> AnyReflected): AnyReflected = mapper(instance)
 
     fun map(mapper: (Any?) -> Any): AnyReflected = flatMap { Reflect.on(mapper(it)) }
 
@@ -28,8 +28,8 @@ class AnyReflected(val clazz: Class<*>, private val instance: Any?) {
         return this
     }
 
-    fun update(name: String, mapper: (Any) -> Any): AnyReflected {
-        set(name, mapper(name))
+    fun update(name: String, function: (Any) -> Any): AnyReflected {
+        set(name, function(name))
         return this
     }
 

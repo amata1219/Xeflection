@@ -10,19 +10,19 @@ class AnyReflected(val clazz: Class[_], private val instance: Any) {
 
   def as[T]: T = instance.asInstanceOf[T]
 
-  def get[T](name: String): T = accessibleField(name).get(instance).asInstanceOf[T]
+  def value[T](name: String): T = accessibleField(name).get(instance).asInstanceOf[T]
 
   def flatMap(mapper: Any => AnyReflected): AnyReflected = mapper(as[Any])
 
   def map(mapper: Any => Any): AnyReflected = flatMap(mapper.andThen(Reflect.on))
 
-  def set(name: String, value: Any): AnyReflected = {
-    accessibleField(name).set(instance, value)
+  def set(name: String, newValue: Any): AnyReflected = {
+    accessibleField(name).set(instance, newValue)
     this
   }
 
-  def update(name: String, value: Any => Any): AnyReflected = {
-    set(name, value(get[Any](name)))
+  def update(name: String, function: Any => Any): AnyReflected = {
+    set(name, function(value[Any](name)))
     this
   }
 
