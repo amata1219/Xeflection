@@ -1,8 +1,12 @@
-package amata1219.xeflection
+package amata1219.xeflection.scala
 
 import java.lang.reflect.{AccessibleObject, Constructor, Field, Method}
 
-class AnyReflected(val clazz: Class[_], val instance: Any) {
+class AnyReflected(val clazz: Class[_], private val instance: Any) {
+
+  private object AnyReflected {
+    val NONE: AnyReflected = Reflect.on(classOf[Unit], ())
+  }
 
   def as[T]: T = instance.asInstanceOf[T]
 
@@ -17,7 +21,7 @@ class AnyReflected(val clazz: Class[_], val instance: Any) {
     this
   }
 
-  def set(name: String, value: Any => Any): AnyReflected = {
+  def update(name: String, value: Any => Any): AnyReflected = {
     set(name, value(get[Any](name)))
     this
   }
@@ -27,38 +31,35 @@ class AnyReflected(val clazz: Class[_], val instance: Any) {
     Reflect.on(field.getType, field.get(instance))
   }
 
-  private def accessibleField(name: String): Field = searchUpward4Member[NoSuchFieldException, Field](_.getDeclaredField(name))
+  private def accessibleField(name: String): Field = searchUpward4Member[Field](_.getDeclaredField(name))
 
   def call(name: String, args: Any*): AnyReflected = {
     val types: Array[Class[_]] = args.map(_.getClass).toArray
     accessibleMethod(name, types:_*).invoke(instance, args:_*) match {
       case null => AnyReflected.NONE
-      case result => Reflect.on(result.getClass, result)
+      case result => Reflect.on(result)
     }
   }
 
-  private def accessibleMethod(name: String, types: Class[_]*): Method = searchUpward4Member[NoSuchMethodException, Method](_.getDeclaredMethod(name, types:_*))
+  private def accessibleMethod(name: String, types: Class[_]*): Method = searchUpward4Member[Method](_.getDeclaredMethod(name, types:_*))
 
-  private def searchUpward4Member[E <: Exception, M >: Null <: AccessibleObject](getter: Class[_] => M): M = {
+  private def searchUpward4Member[M <: AccessibleObject](getter: Class[_] => M): M = {
     var current: Class[_] = clazz
-    var result: M = null
     try {
-      result = getter(current)
+      getter(current)
     } catch {
-      case ex: E =>
-        do {
-          try {
-            result = getter(current)
-          } catch {
-            case _: E =>
-          }
+      case ex: Exception =>
+        while (true) {
           current = current.getSuperclass
-        } while (current != null)
-
-        throw ex
+          if (current == null) throw ex
+          try {
+            return getter(current).accessiblized()
+          } catch {
+            case _: Exception =>
+          }
+        }
+        throw new Exception("Not found specified member")
     }
-    result.setAccessible(true)
-    result
   }
 
   def create(args: Any*): AnyReflected = {
@@ -69,14 +70,14 @@ class AnyReflected(val clazz: Class[_], val instance: Any) {
 
   private def accessibleConstructor(types: Class[_]*): Constructor[_] = {
     val constructor: Constructor[_] = clazz.getDeclaredConstructor(types:_*)
-    constructor.setAccessible(true)
-    constructor
+    constructor.accessiblized()
   }
 
-  private object AnyReflected {
-
-    val NONE: AnyReflected = Reflect.on(classOf[Unit], ())
-
+  implicit class XAccessibleObject[A <: AccessibleObject](val obj: A) {
+    def accessiblized(): A = {
+      obj.setAccessible(true)
+      obj
+    }
   }
 
 }

@@ -1,10 +1,10 @@
-package amata1219.xeflection
+package amata1219.xeflection.scala
 
 object Reflect {
 
   def on(target: Any): AnyReflected = target match {
+    case clazzName: String => on(clazzName, null)
     case clazz: Class[_] => on(clazz, null)
-    case clazzName: String => on(Class.forName(clazzName), null)
     case instance => on(instance.getClass, instance)
   }
 
