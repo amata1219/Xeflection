@@ -8,11 +8,11 @@ class AnyReflected(val clazz: Class[_], private val instance: Any) {
     val NONE: AnyReflected = Reflect.on(classOf[Unit], ())
   }
 
-  def as[T]: T = instance.asInstanceOf[T]
+  def value[T]: T = instance.asInstanceOf[T]
 
   def value[T](name: String): T = accessibleField(name).get(instance).asInstanceOf[T]
 
-  def flatMap(mapper: Any => AnyReflected): AnyReflected = mapper(as[Any])
+  def flatMap(mapper: Any => AnyReflected): AnyReflected = mapper(value[Any])
 
   def map(mapper: Any => Any): AnyReflected = flatMap(mapper.andThen(Reflect.on))
 

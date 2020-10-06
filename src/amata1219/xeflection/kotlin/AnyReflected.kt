@@ -12,16 +12,17 @@ class AnyReflected(val clazz: Class<*>, private val instance: Any?) {
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <T> cast2(): T? = when (instance) {
-        null -> null
-        else -> instance as T
+    fun <T> value(): T = instance as T
+
+    fun <T> value(name: String): T = field(name).value()
+
+    @Suppress("UNCHECKED_CAST")
+    fun <T> flatMap(mapper: (T) -> AnyReflected): AnyReflected = when (instance) {
+        null -> NONE
+        else -> mapper(instance as T)
     }
 
-    fun <T> value(name: String): T? = field(name).cast2<T>()
-
-    fun flatMap(mapper: (Any?) -> AnyReflected): AnyReflected = mapper(instance)
-
-    fun map(mapper: (Any?) -> Any): AnyReflected = flatMap { Reflect.on(mapper(it)) }
+    fun <T> map(mapper: (T) -> Any): AnyReflected = flatMap<T> { Reflect.on(mapper(it)) }
 
     fun set(name: String, newValue: Any): AnyReflected {
         accessibleField(name).set(instance, newValue)
@@ -40,12 +41,17 @@ class AnyReflected(val clazz: Class<*>, private val instance: Any?) {
 
     private fun accessibleField(name: String): Field = searchUpward4Member<Field> { it.getDeclaredField(name) }
 
+    @Suppress("UNCHECKED_CAST")
     fun call(name: String, vararg args: Any): AnyReflected {
         val types: Array<Class<*>> = args.map(Any::javaClass).toTypedArray()
         return when (val result: Any? = accessibleMethod(name, *types).invoke(instance, *args)) {
             null -> NONE
             else -> Reflect.on(result)
         }
+    }
+
+    fun run(name: String, vararg args: Any): Unit {
+        call(name, args)
     }
 
     private fun accessibleMethod(name: String, vararg types: Class<*>): Method = searchUpward4Member<Method> { it.getDeclaredMethod(name, *types) }
